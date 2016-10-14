@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ClaudenirFreitas/sample-api-nodejs.svg?branch=master)](https://travis-ci.org/ClaudenirFreitas/sample-api-nodejs)
+!https://travis-ci.org/ClaudenirFreitas/sample-api-nodejs.svg?branch=master!:https://travis-ci.org/ClaudenirFreitas/sample-api-nodejs
 
 # sample-api-nodejs
 
