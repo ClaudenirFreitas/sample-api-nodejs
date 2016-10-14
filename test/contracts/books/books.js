@@ -1,115 +1,135 @@
-import winston from 'winston';
+import HttpStatus from 'http-status';
+import jwt from 'jwt-simple';
 
-winston.info('Running tests of contracts [Books]...');
-
-describe('Routes books', () => {
+describe('Routes: Books', () => {
   const Books = app.datasource.models.Book;
+  const Users = app.datasource.models.User;
+  const jwtSecret = app.config.jwtSecret;
+
   const defaultBook = {
     id: 1,
-    name: 'Default book',
-    description: 'Description default Book',
+    name: 'Test Book',
+    description: 'Test description book',
   };
 
+  let token;
+
   beforeEach(done => {
-    Books
-            .destroy({ where: {} })
-            .then(() => {
-              Books.create(defaultBook)
-                    .then(() => { done(); });
-            });
-  });
-
-  describe('Route GET /books', () => {
-    it('should return a list of books', done => {
-      const bookList = Joi.array().items(Joi.object().keys({
-        id: Joi.number(),
-        name: Joi.string(),
-        description: Joi.string(),
-        created_at: Joi.date().iso(),
-        updated_at: Joi.date().iso(),
-      }));
-
-      request
-                .get('/books')
-                .end((err, res) => {
-                  joiAssert(res.body, bookList);
-                  done(err);
-                });
-    });
-  });
-
-  describe('Route GET /books/:id', () => {
-    it('should return a book', done => {
-      const book = Joi.object().keys({
-        id: Joi.number(),
-        name: Joi.string(),
-        description: Joi.string(),
-        created_at: Joi.date().iso(),
-        updated_at: Joi.date().iso(),
+    Users
+      .destroy({ where: {} })
+      .then(() => Users.create({
+        name: 'John',
+        email: 'john@gmail.com',
+        password: '12345',
+      }))
+      .then(user => {
+        Books
+          .destroy({ where: {} })
+          .then(() => Books.create(defaultBook))
+          .then(() => {
+            token = jwt.encode({ id: user.id }, jwtSecret);
+            done();
+          });
       });
+  });
 
+  describe('GET /books', () => {
+    it('should validate a list of books', done => {
       request
-                .get('/books/1')
-                .end((err, res) => {
-                  joiAssert(res.body, book);
-                  done(err);
-                });
+        .get('/books')
+        .set('Authorization', `JWT ${token}`)
+        .end((err, res) => {
+          const booksList = Joi.array().items(Joi.object().keys({
+            id: Joi.number(),
+            name: Joi.string(),
+            description: Joi.string(),
+            created_at: Joi.date().iso(),
+            updated_at: Joi.date().iso(),
+          }));
+
+          joiAssert(res.body, booksList);
+          done(err);
+        });
     });
   });
 
-  describe('Route POST /books', () => {
-    it('should create a book', done => {
-      const newBook = {
-        name: 'new  Book',
-        description: 'new description book',
+  describe('GET /books/{id}', () => {
+    it('should validate a single book schema', done => {
+      request
+        .get('/books/1')
+        .set('Authorization', `JWT ${token}`)
+        .end((err, res) => {
+          const booksList = Joi.object().keys({
+            id: Joi.number(),
+            name: Joi.string(),
+            description: Joi.string(),
+            created_at: Joi.date().iso(),
+            updated_at: Joi.date().iso(),
+          });
+
+          joiAssert(res.body, booksList);
+          done(err);
+        });
+    });
+  });
+
+  describe('POST /books', () => {
+    it('should validate a new book schema', done => {
+      const book = {
+        id: 2,
+        name: 'Book Created',
+        description: 'Book description created',
       };
 
-      const book = Joi.object().keys({
-        id: Joi.number(),
-        name: Joi.string(),
-        description: Joi.string(),
-        created_at: Joi.date().iso(),
-        updated_at: Joi.date().iso(),
-      });
-
       request
-                .post('/books')
-                .send(newBook)
-                .end((err, res) => {
-                  joiAssert(res.body, book);
-                  done(err);
-                });
+        .post('/books')
+        .set('Authorization', `JWT ${token}`)
+        .send(book)
+        .end((err, res) => {
+          const createdBook = Joi.object().keys({
+            id: Joi.number(),
+            name: Joi.string(),
+            description: Joi.string(),
+            created_at: Joi.date().iso(),
+            updated_at: Joi.date().iso(),
+          });
+
+          joiAssert(res.body, createdBook);
+          done(err);
+        });
     });
   });
 
-  describe('Route PUT /books/:id', () => {
-    it('should update a book', done => {
-      const updatedBook = {
+  describe('PUT /books/{id}', () => {
+    it('should validate a updated book', done => {
+      const book = {
         id: 1,
-        name: 'updated  Book',
-        description: 'updated description book',
+        name: 'Book Updated',
+        description: 'Book description updated',
       };
 
-      const updatedCount = Joi.array().items(1);
-
       request
-                .put('/books/1')
-                .send(updatedBook)
-                .end((err, res) => {
-                  joiAssert(res.body, updatedCount);
-                  done(err);
-                });
+        .put('/books/1')
+        .set('Authorization', `JWT ${token}`)
+        .send(book)
+        .end((err, res) => {
+          const updatedCount = Joi.array().items(1);
+
+          joiAssert(res.body, updatedCount);
+          done(err);
+        });
     });
   });
 
-  describe('Route DELETE /books/:id', () => {
-    it('should delete a book', done => {
+  describe('DELETE /books/{id}', () => {
+    it('should validate a deleted book', done => {
       request
-                .delete('/books/1')
-                .end((err, res) => {
-                  expect(res.statusCode).to.be.eql(204);
-                  done(err);
-                });
+        .delete('/books/1')
+        .set('Authorization', `JWT ${token}`)
+        .end((err, res) => {
+          expect(res.statusCode).to.eql(HttpStatus.NO_CONTENT);
+          done(err);
+        });
     });
   });
 });

@@ -4,7 +4,7 @@ import datasource from './config/datasource';
 import config from './config/config';
 import booksRouter from './routes/books';
 import usersRouter from './routes/users';
-import authRouter from './routes/auth'
+import authRouter from './routes/auth';
 import authorization from './auth';
 
 const app = express();
