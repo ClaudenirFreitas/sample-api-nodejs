@@ -9,4 +9,4 @@ env:
 before_install:
     - npm install
 script:
-    - npm run test-all
+    - npm run test
